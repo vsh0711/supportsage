@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: supportsage
+    runtime: docker
+    plan: free
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: LANGCHAIN_API_KEY
+        sync: false
+      - key: LANGCHAIN_TRACING_V2
+        value: "true"
+      - key: LANGCHAIN_PROJECT
+        value: supportsage
+      - key: APP_ENV
+        value: production
+      - key: PYTHONPATH
+        value: /app
