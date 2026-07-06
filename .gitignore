@@ -1,9 +1,10 @@
+cat > .gitignore << 'EOF'
 .env
 __pycache__/
 *.pyc
 .DS_Store
 data/chroma_db/
-data/raw/
 data/processed/
 *.pkl
 .poetry/
+EOF
