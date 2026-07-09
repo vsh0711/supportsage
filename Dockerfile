@@ -15,7 +15,10 @@ RUN pip install --upgrade pip && \
     python-dotenv pydantic pydantic-settings \
     langsmith datasets
 
-RUN python -m spacy download en_core_web_lg
+# Download models at BUILD time not runtime — avoids OOM on free tier
+RUN python -m spacy download en_core_web_sm
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('paraphrase-MiniLM-L3-v2')"
+RUN python -c "from sentence_transformers import CrossEncoder; CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')"
 
 COPY main.py ./
 COPY app/ ./app/
@@ -25,5 +28,4 @@ RUN mkdir -p ./data/processed ./data/chroma_db
 
 EXPOSE 8000
 
-# Run ingestion first, then start the server
 CMD ["sh", "-c", "PYTHONPATH=/app python app/rag/ingestor.py && uvicorn main:app --host 0.0.0.0 --port 8000"]

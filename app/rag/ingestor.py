@@ -41,7 +41,7 @@ class Ingestor:
         metadata={"hnsw:space": "cosine"}
     )
 
-    def ingest(self, jsonl_path: str, sample_size: int = 200):
+    def ingest(self, jsonl_path: str, sample_size: int = 50):
         logger.info(f"Loading dataset from {jsonl_path}")
         rows = []
         with open(jsonl_path, "r") as f:
