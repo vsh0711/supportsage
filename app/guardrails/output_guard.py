@@ -1,94 +1,60 @@
-#output validation guardrails for the support agent
-
-from presidio_analyzer import AnalyzerEngine
-from presidio_anonymizer import AnonymizerEngine
+# app/guardrails/output_guard.py
+import re
 import logging
 
 logger = logging.getLogger(__name__)
 
-# Hallucination signals — phrases that indicate LLM is making things up
+PII_PATTERNS = {
+    "EMAIL": r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
+    "PHONE": r'\b(\+\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b',
+    "SSN": r'\b\d{3}-\d{2}-\d{4}\b',
+    "CREDIT_CARD": r'\b(?:\d{4}[-\s]?){3}\d{4}\b',
+}
+
 HALLUCINATION_SIGNALS = [
     "as of my knowledge cutoff",
     "i don't have access to real-time",
-    "i cannot browse the internet",
     "as an ai language model",
     "i'm just an ai",
     "my training data",
 ]
 
-# Refusal triggers — responses that mean retrieval failed
 REFUSAL_TRIGGERS = [
     "i don't have enough information",
     "i cannot answer",
-    "i don't know",
     "no information available",
 ]
 
-
 class OutputGuard:
-    """
-    Two checks on every LLM response before it reaches the user:
-    
-    1. PII redaction — LLM might echo back PII from retrieved docs
-       (e.g. a support doc contains a customer's example email)
-    
-    2. Hallucination detection — catch LLM breaking character
-       and referring to its own training data instead of our KB
-    """
-
     def __init__(self):
-        self.analyzer = AnalyzerEngine()
-        self.anonymizer = AnonymizerEngine()
+        self.pii_patterns = {k: re.compile(v) for k, v in PII_PATTERNS.items()}
 
     def redact_pii(self, text: str) -> str:
-        results = self.analyzer.analyze(
-            text=text,
-            entities=["EMAIL_ADDRESS", "PHONE_NUMBER", "CREDIT_CARD", "US_SSN"],
-            language="en"
-        )
-        if not results:
-            return text
-        return self.anonymizer.anonymize(text=text, analyzer_results=results).text
+        for pii_type, pattern in self.pii_patterns.items():
+            text = pattern.sub(f"[{pii_type}_REDACTED]", text)
+        return text
 
     def check_hallucination(self, text: str) -> tuple[bool, str]:
-        """Returns (is_hallucinating, signal_found)"""
         lower = text.lower()
         for signal in HALLUCINATION_SIGNALS:
             if signal in lower:
-                logger.warning(f"Hallucination signal detected: {signal}")
                 return True, signal
         return False, ""
 
     def is_refusal(self, text: str) -> bool:
         lower = text.lower()
-        return any(trigger in lower for trigger in REFUSAL_TRIGGERS)
+        return any(t in lower for t in REFUSAL_TRIGGERS)
 
     def validate(self, response: str) -> dict:
-        """
-        Returns:
-        {
-            "cleaned_response": str,
-            "is_hallucination": bool,
-            "is_refusal": bool,
-            "override_response": str or None  # if we need to replace the response
-        }
-        """
-        # Check hallucination first
         is_hallucinating, signal = self.check_hallucination(response)
         if is_hallucinating:
             return {
                 "cleaned_response": "",
                 "is_hallucination": True,
                 "is_refusal": False,
-                "override_response": (
-                    "I'm sorry, I couldn't find a confident answer for that. "
-                    "Let me connect you with a human agent who can help."
-                )
+                "override_response": "I couldn't find a confident answer. Let me connect you with a human agent."
             }
-
-        # Redact any PII in output
         cleaned = self.redact_pii(response)
-
         return {
             "cleaned_response": cleaned,
             "is_hallucination": False,
@@ -96,6 +62,4 @@ class OutputGuard:
             "override_response": None
         }
 
-
-# Singleton
 output_guard = OutputGuard()
