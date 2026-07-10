@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     PINECONE_INDEX: str = "supportsage"
 
     # Embeddings via HF Inference API
-    HF_TOKEN: str
+    HF_TOKEN: str = ""
     HF_EMBEDDING_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"
     EMBEDDING_DIM: int = 384
 
