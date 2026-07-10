@@ -8,8 +8,15 @@ authors = [
 requires-python = ">=3.10,<3.15"
 dependencies = [
     "datasets (>=5.0.0,<6.0.0)",
-    "pydantic-settings (>=2.14.2,<3.0.0)"
+    "pydantic-settings (>=2.14.2,<3.0.0)",
+    "rank-bm25 (>=0.2.2,<0.3.0)",
+    "pinecone (>=6.0.0,<7.0.0)",
+    "sentence-transformers (>=3.0.0,<4.0.0)",
+    "langchain-groq (>=0.1.0,<1.0.0)",
+    "presidio-analyzer (>=2.2.30,<3.0.0)",
+    "presidio-anonymizer (>=2.2.36)"
 ]
+
 
 
 [build-system]

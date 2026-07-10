@@ -3,29 +3,25 @@ FROM python:3.10-slim
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    curl \
+    build-essential curl \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --upgrade pip && \
     pip install fastapi uvicorn langchain langchain-community langchain-groq \
-    chromadb sentence-transformers rank-bm25 \
-    anthropic presidio-analyzer presidio-anonymizer \
-    "spacy>=3.7.2,<3.8.0" \
+    pinecone-client sentence-transformers rank-bm25 \
     python-dotenv pydantic pydantic-settings \
-    langsmith datasets
+    langsmith
 
-# Download models at BUILD time not runtime — avoids OOM on free tier
-RUN python -m spacy download en_core_web_sm
-RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('paraphrase-MiniLM-L3-v2')"
-RUN python -c "from sentence_transformers import CrossEncoder; CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')"
+# Pre-download embedding model at build time
+# Model cached in image — no download at runtime = no OOM spike
+RUN python -c "from sentence_transformers import SentenceTransformer; \
+    SentenceTransformer('all-MiniLM-L6-v2')"
 
 COPY main.py ./
 COPY app/ ./app/
-COPY data/raw/support_dataset.jsonl ./data/raw/support_dataset.jsonl
-
-RUN mkdir -p ./data/processed ./data/chroma_db
+COPY data/processed/bm25_index.pkl ./data/processed/bm25_index.pkl
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "PYTHONPATH=/app python app/rag/ingestor.py && uvicorn main:app --host 0.0.0.0 --port 8000"]
+# Just start the server — no ingestion
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

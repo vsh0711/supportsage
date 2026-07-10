@@ -16,11 +16,18 @@ import asyncio
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-
 @router.get("/health", response_model=HealthResponse)
 def health():
-    """Health check — Render uses this to verify the container is alive."""
+    """
+    Health check + model warmup.
+    Render pings this every 30s — keeps the model warm.
+    First ping after cold start loads the model.
+    Subsequent pings return instantly.
+    """
+    from app.rag.embedder import embedder
+    embedder.embed_query("warmup")  # pre-warms model on first hit
     return HealthResponse(status="ok", version="1.0.0")
+
 
 
 @router.post("/query", response_model=QueryResponse)
