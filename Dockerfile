@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y \
 
 RUN pip install --upgrade pip && \
     pip install fastapi uvicorn langchain langchain-community langchain-groq \
-    pinecone-client sentence-transformers rank-bm25 \
+    pinecone sentence-transformers rank-bm25 \
     python-dotenv pydantic pydantic-settings \
     langsmith
 
