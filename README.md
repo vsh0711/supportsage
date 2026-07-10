@@ -181,10 +181,4 @@ PYTHONPATH=. uvicorn main:app --reload --port 8000
 
 ---
 
-## Author
 
-**Vishalini Satheesh**  
-M.E. Computer Science (OR specialization) — College of Engineering, Guindy, Anna University  
-2.6 years BFSI ML Engineering — TCS (client: USAA)  
-Focus: Responsible AI · XAI · Production ML Systems  
-GitHub: [@vsh0711](https://github.com/vsh0711)
